@@ -34,7 +34,7 @@ const Login = () => {
         <div className="login-container">
             <div className="login-card">
                 <div className="login-header">
-                    <h1>ICAN Conference</h1>
+                    <h1>ICNAN'25 Conference</h1>
                     <p>Entry Validation System</p>
                 </div>
 
