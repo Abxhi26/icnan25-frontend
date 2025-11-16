@@ -11,9 +11,19 @@ export default function AdminDashboard() {
 
     async function upload(e) {
         e.preventDefault();
-        if (!file) return alert('Pick file');
-        setResult(null);
-        try { const r = await api.uploadExcel(file); setResult(r); } catch (err) { setResult(err); }
+        if (!file) return alert('Pick a file');
+
+        try {
+            const r = await api.uploadExcel(file);
+            setResult(r);
+        } catch (err) {
+            // handle auth error nicely
+            if (err && err.error && err.error === 'Not authenticated') {
+                alert('You are not authenticated. Please login again as an Admin.');
+                // optionally route to login page
+                return;
+            }
+            setResult(err); }
     }
 
     async function search() {

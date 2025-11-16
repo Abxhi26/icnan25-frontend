@@ -2,14 +2,23 @@
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 let _token = null;
-export function setToken(token) { _token = token; }
-export function clearToken() { _token = null; }
+export function setToken(token) { _token = token; localStorage.setItem('token', token); }
+export function clearToken() { _token = null; localStorage.removeItem('token'); }
+
+function authHeaders() {
+    return _token ? { Authorization: `Bearer ${_token}` } : {};
+}
 
 async function request(path, opts = {}) {
     const headers = opts.headers || {};
-    headers['Accept'] = 'application/json';
-    if (!(opts.body instanceof FormData)) headers['Content-Type'] = 'application/json';
-    if (_token) headers['Authorization'] = `Bearer ${_token}`;
+    // If body is FormData, do not set Content-Type (browser will set boundary)
+    if (!(opts.body instanceof FormData)) {
+        headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+    }
+    headers['Accept'] = headers['Accept'] || 'application/json';
+
+    // Attach Authorization if present
+    Object.assign(headers, authHeaders());
 
     const res = await fetch(`${BASE}${path}`, { ...opts, headers });
     const text = await res.text();
@@ -17,8 +26,8 @@ async function request(path, opts = {}) {
     try { body = text ? JSON.parse(text) : null; } catch { body = text; }
 
     if (!res.ok) {
-        const err = body || { error: res.statusText || 'Request failed' };
-        throw err;
+        // propagate structured error
+        throw body || { error: res.statusText || 'Request failed' };
     }
     return body;
 }
@@ -34,8 +43,8 @@ export const searchParticipants = (query) => request(`/participants/search?query
 export const uploadExcel = (file) => {
     const fd = new FormData();
     fd.append('file', file);
-    const headers = {}; // let fetch set the content-type for multipart
-    return request('/participants/upload-excel', { method: 'POST', body: fd, headers });
+    // do NOT set Content-Type here — request() will avoid setting it
+    return request('/participants/upload-excel', { method: 'POST', body: fd });
 };
 export const assignBarcode = (email, barcode) => request('/participants/assign-barcode', {
     method: 'POST', body: JSON.stringify({ email, barcode })
