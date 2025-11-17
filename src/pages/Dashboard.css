@@ -1,11 +1,30 @@
-.dashboard-page .cards {
-    display: flex;
-    gap: 12px;
-    margin-top: 18px
+.dashboard {
+    background: var(--main-bg);
+    color: var(--text-main);
+    min-height: 100vh;
 }
 
-.dashboard-page .card {
-    flex: 1;
-    padding: 18px;
-    text-align: center
+.dashboard-card,
+.wrapper {
+    background: var(--panel-bg);
+    border-radius: 16px;
+    padding: 28px 18px;
+    max-width: 450px;
+    margin: 48px auto 0 auto;
+    border: 1px solid var(--border-dark);
+    color: var(--text-main);
+    box-shadow: 0 2px 15px 0 rgba(34, 44, 72, 0.11);
+}
+
+input,
+select {
+    margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+
+    .dashboard-card,
+    .wrapper {
+        padding: 11px 4px;
+    }
 }

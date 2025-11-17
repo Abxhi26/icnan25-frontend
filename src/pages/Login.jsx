@@ -4,35 +4,59 @@ import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 export default function Login() {
+    const { login } = useAuth();
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
-    const [err, setErr] = useState('');
-    const { login } = useAuth();
-    const nav = useNavigate();
+    const [role, setRole] = useState('admin');
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
-    async function submit(e) {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        setErr('');
+        setError('');
         try {
-            const res = await login(identifier.trim(), password);
-            if (res.user.role === 'ADMIN') nav('/admin');
-            else nav('/staff');
-        } catch (e) {
-            setErr(e?.error || e?.message || JSON.stringify(e));
+            await login(identifier, password, role);
+            if (role === 'admin') navigate('/admin');
+            else navigate('/dashboard');
+        } catch (err) {
+            setError('Invalid login credentials.');
         }
-    }
+    };
 
     return (
-        <div className="page login-page">
-            <form className="card login-card" onSubmit={submit}>
-                <h2>Sign in</h2>
-                <label>Staff ID or Email</label>
-                <input value={identifier} onChange={e => setIdentifier(e.target.value)} />
-                <label>Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
-                {err && <div className="error">{err}</div>}
-                <button className="btn">Login</button>
-            </form>
+        <div className="login-background">
+            <div className="login-card">
+                <h2>Smart Entry System Login</h2>
+                <form onSubmit={handleLogin}>
+                    <div className="tab-switch">
+                        <button type="button" className={role === 'admin' ? 'active' : ''} onClick={() => setRole('admin')}>Admin</button>
+                        <button type="button" className={role === 'staff' ? 'active' : ''} onClick={() => setRole('staff')}>Staff</button>
+                    </div>
+                    <label>
+                        {role === 'admin' ? 'Admin Email or Staff ID' : 'Staff Email or ID'}
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="Email or Staff ID"
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
+                            required
+                        />
+                    </label>
+                    <label>
+                        Password
+                        <input
+                            type="password"
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </label>
+                    <button type="submit" className="login-btn">Login</button>
+                </form>
+                {error && <div className="error">{error}</div>}
+            </div>
         </div>
     );
 }

@@ -1,9 +1,121 @@
-.participant-row {
-    padding: 8px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.02)
+.admin-dashboard {
+    background: var(--main-bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding-bottom: 60px;
 }
 
-.entry-row {
-    padding: 6px;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.02)
+.admin-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--primary-accent);
+    padding: 24px;
+}
+
+.tabs {
+    background: var(--panel-bg);
+    padding: 18px 0 11px 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.tab {
+    background: var(--secondary-accent);
+    color: var(--text-light);
+    border-radius: 7px;
+    font-weight: 500;
+    padding: 8px 18px;
+    font-size: 16px;
+    margin-right: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.17s;
+}
+
+.tab.active,
+.tab:active {
+    background: var(--primary-accent);
+    color: #fff;
+}
+
+.panel {
+    background: var(--panel-bg);
+    color: var(--text-main);
+    border-radius: 14px;
+    margin: 28px auto 0 auto;
+    max-width: 1050px;
+    padding: 34px 28px 26px 28px;
+    box-shadow: 0 3px 16px 0 rgba(34, 34, 54, 0.13);
+    border: 1px solid var(--border-dark);
+}
+
+.user-row {
+    background: var(--card-bg);
+    color: var(--text-main);
+    margin-bottom: 7px;
+    padding: 15px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border-dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.assign-section {
+    margin-top: 22px;
+    background: var(--secondary-accent);
+    padding: 18px 16px;
+    border-radius: 10px;
+}
+
+.logout-button {
+    background: var(--danger);
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: 8px;
+}
+
+.table-container {
+    background: var(--panel-bg);
+    border-radius: 14px;
+    margin-top: 18px;
+    border: 1px solid var(--border-dark);
+}
+
+table {
+    width: 100%;
+    background: var(--panel-bg);
+    color: var(--text-main);
+    border-radius: 10px;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    background: var(--secondary-accent);
+    color: #fff;
+    border-bottom: 2px solid var(--primary-accent);
+    text-align: left;
+    padding: 13px 10px;
+}
+
+td {
+    border-bottom: 1px solid var(--border-dark);
+    padding: 12px 8px;
+}
+
+@media (max-width: 800px) {
+
+    .panel,
+    .table-container {
+        padding: 16px 6px;
+    }
+
+    th,
+    td {
+        padding: 8px 3px;
+        font-size: 13px;
+    }
 }

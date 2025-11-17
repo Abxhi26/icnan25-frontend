@@ -1,19 +1,64 @@
-.login-page {
+.login-background {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #23243a 3%, #232854 98%);
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 70vh;
 }
 
 .login-card {
-    width: 380px;
-    text-align: left;
+    background: #1b1d2b;
+    color: #f3f6fa;
+    padding: 42px 38px 36px 38px;
+    border-radius: 16px;
+    box-shadow: 0 0 42px 0 rgba(40, 44, 62, 0.14);
+    min-width: 360px;
+    max-width: 94vw;
 }
 
-.login-card h2 {
-    margin: 0 0 8px 0
+.login-card form label {
+    display: block;
+    margin-bottom: 12px;
 }
 
 .login-card input {
-    height: 40px
+    font-size: 16px;
+    background: #212239;
+    border: 1px solid #292c45;
+    color: #f3f6fa;
+    width: 100%;
+    margin-top: 3px;
+}
+
+.login-btn {
+    width: 100%;
+    margin-top: 16px;
+}
+
+.tab-switch {
+    display: flex;
+    margin-bottom: 16px;
+    gap: 8px;
+}
+
+.tab-switch button {
+    flex: 1;
+    background: #212239;
+    color: #b0b4c7;
+    border-radius: 6px;
+    border: 1px solid #343554;
+    cursor: pointer;
+}
+
+.tab-switch button.active,
+.tab-switch button:active {
+    background: #3841a3;
+    color: #fff;
+    border-color: #3841a3;
+}
+
+.error {
+    margin-top: 16px;
+    color: #d7263d;
+    font-weight: bold;
 }

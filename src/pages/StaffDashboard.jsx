@@ -1,62 +1,140 @@
 import React, { useState } from 'react';
-import * as api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import {
+    searchParticipants,
+    assignBarcode,
+    markEntry,
+    getEntryHistory,
+} from '../services/api';
 import './StaffDashboard.css';
 
-export default function StaffDashboard() {
+function StaffDashboard() {
+    const { logout } = useAuth();
+    const [activeTab, setActiveTab] = useState(0);
+
+    // Search and assign barcode
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
     const [barcode, setBarcode] = useState('');
-    const [venue, setVenue] = useState('Main Hall');
-    const [result, setResult] = useState(null);
-    const [historyBarcode, setHistoryBarcode] = useState('');
-    const [history, setHistory] = useState(null);
+    const [barcodeMsg, setBarcodeMsg] = useState('');
 
-    async function mark(e) {
-        e?.preventDefault();
-        setResult(null);
-        try { const r = await api.markEntry(barcode.trim(), venue); setResult(r); } catch (err) { setResult(err); }
-    }
+    // Entry marking
+    const [venue, setVenue] = useState('');
+    const [entryMsg, setEntryMsg] = useState('');
+    const [history, setHistory] = useState([]);
 
-    async function loadHistory() {
-        if (!historyBarcode.trim()) return;
+    const handleSearch = async () => {
+        setSelectedUser(null);
         try {
-            const h = await api.entryHistory(historyBarcode.trim());
-            setHistory(h);
-        } catch (e) {
-            setHistory(null);
-            alert(e?.error || JSON.stringify(e));
+            const res = await searchParticipants(searchQuery);
+            setSearchResults(res.data || res);
+        } catch {
+            setSearchResults([]);
         }
-    }
+    };
+
+    const handleBarcodeAssign = async () => {
+        try {
+            await assignBarcode(selectedUser.email, barcode);
+            setBarcodeMsg('Assigned!');
+        } catch {
+            setBarcodeMsg('Failed.');
+        }
+    };
+
+    const handleMarkEntry = async () => {
+        try {
+            await markEntry(barcode, venue);
+            setEntryMsg('Entry marked!');
+            const hist = await getEntryHistory(barcode);
+            setHistory(hist.data.entries || []);
+        } catch {
+            setEntryMsg('Error marking entry.');
+        }
+    };
 
     return (
-        <div className="page staff-page">
-            <div className="topbar">
-                <h3>Staff Tools</h3>
+        <div className="staff-dashboard app-container">
+            <div className="admin-nav">
+                <h2>Staff Dashboard</h2>
+                <button className="logout-button" onClick={logout}>Logout</button>
+            </div>
+            <div className="tabs">
+                <button className={activeTab === 0 ? 'tab active' : 'tab'} onClick={() => setActiveTab(0)}>Search & Assign</button>
+                <button className={activeTab === 1 ? 'tab active' : 'tab'} onClick={() => setActiveTab(1)}>Mark Entry</button>
             </div>
 
-            <section className="card">
-                <h4>Mark entry</h4>
-                <form onSubmit={mark}>
-                    <input placeholder="Barcode" value={barcode} onChange={e => setBarcode(e.target.value)} />
-                    <input placeholder="Venue" value={venue} onChange={e => setVenue(e.target.value)} />
-                    <button className="btn">Mark</button>
-                </form>
-                {result && <pre className="output">{JSON.stringify(result, null, 2)}</pre>}
-            </section>
-
-            <section className="card">
-                <h4>Entry history</h4>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <input placeholder="Barcode" value={historyBarcode} onChange={e => setHistoryBarcode(e.target.value)} />
-                    <button className="btn" onClick={loadHistory}>Load</button>
-                </div>
-                {history && (
-                    <div>
-                        <h5>{history.participant.name} — {history.participant.email}</h5>
-                        {history.entries.map(en => (
-                            <div key={en.id} className="entry-row">{new Date(en.timestamp).toLocaleString()} — {en.venue}</div>
+            {/* Tab 1: Search/Assign */}
+            {activeTab === 0 && (
+                <div className="panel">
+                    <h3>Search Participant & Assign Barcode</h3>
+                    <input
+                        type="text"
+                        placeholder="Email, ref, name, phone"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                    <button onClick={handleSearch}>Search</button>
+                    <div style={{ marginTop: 12 }}>
+                        {searchResults.map(user => (
+                            <div
+                                key={user.email}
+                                className="user-row"
+                                onClick={() => setSelectedUser(user)}
+                                style={{ cursor: 'pointer', padding: '12px 0' }}
+                            >
+                                <span>{user.name}</span>
+                                <span>Barcode: <b>{user.barcode || '-'}</b></span>
+                            </div>
                         ))}
                     </div>
-                )}
-            </section>
+                    {selectedUser && (
+                        <div style={{ marginTop: 12 }}>
+                            <div>Assign Barcode to: {selectedUser.name} ({selectedUser.email})</div>
+                            <input
+                                type="text"
+                                placeholder="Barcode"
+                                value={barcode}
+                                onChange={e => setBarcode(e.target.value)}
+                            />
+                            <button onClick={handleBarcodeAssign}>Assign</button>
+                            <div>{barcodeMsg}</div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Tab 2: Mark Entry */}
+            {activeTab === 1 && (
+                <div className="panel">
+                    <h3>Mark Entry</h3>
+                    <input
+                        type="text"
+                        placeholder="Participant Barcode"
+                        value={barcode}
+                        onChange={e => setBarcode(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Venue"
+                        value={venue}
+                        onChange={e => setVenue(e.target.value)}
+                    />
+                    <button onClick={handleMarkEntry}>Mark Entry</button>
+                    <div>{entryMsg}</div>
+                    <div style={{ marginTop: 16 }}>
+                        <b>Entry History (recent):</b>
+                        <ul>
+                            {history.map(entry => (
+                                <li key={entry.id}>{entry.venue} - {new Date(entry.timestamp).toLocaleString()}</li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+
+export default StaffDashboard;

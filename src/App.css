@@ -1,4 +1,151 @@
-.app-root {
+:root {
+  --main-bg: #181a29;
+  --panel-bg: #22243a;
+  --primary-accent: #3841a3;
+  --secondary-accent: #262b4d;
+  --success: #05b169;
+  --danger: #d7263d;
+  --text-main: #f3f6fa;
+  --text-light: #b0b4c7;
+  --border-dark: #292b41;
+}
+
+body {
+  background: var(--main-bg);
+  color: var(--text-main);
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'sans-serif';
   min-height: 100vh;
-  padding-bottom: 40px;
+  margin: 0;
+}
+
+a {
+  color: var(--primary-accent);
+  text-decoration: none;
+}
+
+input,
+select,
+textarea {
+  background: var(--panel-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+  padding: 9px 13px;
+  margin-bottom: 10px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 1px solid var(--primary-accent);
+}
+
+button,
+.btn {
+  background: var(--primary-accent);
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 7px;
+  padding: 10px 24px;
+  min-width: 100px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+button:disabled,
+.btn:disabled {
+  background: #363950;
+  color: #888;
+  cursor: not-allowed;
+}
+
+button.logout-button {
+  background: var(--danger);
+}
+
+.card,
+.panel,
+.details-card,
+.box {
+  background: var(--panel-bg);
+  color: var(--text-main);
+  border-radius: 12px;
+  padding: 28px 22px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-dark);
+}
+
+.tabs {
+  background: var(--panel-bg);
+}
+
+.tab {
+  background: transparent;
+  color: var(--text-light);
+  border: none;
+  padding: 10px 18px;
+  margin: 0 4px;
+  border-radius: 7px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.17s;
+}
+
+.tab.active,
+.tab:active {
+  background: var(--primary-accent);
+  color: #fff;
+}
+
+.status-badge {
+  background: #1e2136;
+  color: var(--success);
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.error {
+  color: var(--danger);
+  font-weight: 500;
+}
+
+.success {
+  color: var(--success);
+}
+
+.table-container,
+table {
+  background: var(--panel-bg);
+  color: var(--text-main);
+  border-radius: 10px;
+  overflow: auto;
+  width: 100%;
+}
+
+th {
+  background: var(--secondary-accent);
+  color: #fff;
+  border-bottom: 2px solid var(--primary-accent);
+  text-align: left;
+  padding: 12px 10px;
+}
+
+td {
+  border-bottom: 1px solid var(--border-dark);
+  padding: 11px 8px;
+}
+
+::-webkit-scrollbar {
+  background: #20222e;
+  width: 10px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #373857;
+  border-radius: 6px;
 }
