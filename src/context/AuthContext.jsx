@@ -1,43 +1,22 @@
-// frontend/src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as api from '../services/api';
+import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
-    });
-    const [token, setTokenState] = useState(() => localStorage.getItem('token') || null);
-
-    useEffect(() => {
-        if (token) api.setToken(token);
-        else api.clearToken();
-    }, [token]);
+    const [user, setUser] = useState(null);
 
     const login = async (identifier, password) => {
-        const res = await api.login(identifier, password);
-        if (res && res.token) {
-            api.setToken(res.token);
-            localStorage.setItem('user', JSON.stringify(res.user));
-            setUser(res.user);
-            setTokenState(res.token);
-        }
-        return res;
+        // do login request with backend, setUser on success
     };
-
-    const logout = () => {
-        api.clearToken();
-        localStorage.removeItem('user');
-        setUser(null);
-        setTokenState(null);
-    };
+    const logout = () => setUser(null);
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+    return useContext(AuthContext);
+}
