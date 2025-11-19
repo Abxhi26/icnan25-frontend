@@ -5,7 +5,6 @@ import {
     getAllParticipants,
     uploadParticipantsExcel,
     assignBarcode,
-    deassignBarcode,
     markEntry,
     getAllEntries,
     getEntryStats
@@ -24,27 +23,20 @@ function AdminDashboard() {
     const { logout } = useAuth();
     const [activeTab, setActiveTab] = useState(0);
 
-    // States shared across tabs
+    // Shared states
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
-
-    // Barcode
     const [barcode, setBarcode] = useState('');
     const [barcodeAssignMsg, setBarcodeAssignMsg] = useState('');
 
-    // Mark entry
     const [venue, setVenue] = useState('');
     const [entryMsg, setEntryMsg] = useState('');
 
-    // Upload
     const [uploadFile, setUploadFile] = useState(null);
     const [uploadMsg, setUploadMsg] = useState('');
 
-    // All participants
     const [allParticipants, setAllParticipants] = useState([]);
-
-    // Entry logs/statistics
     const [allEntries, setAllEntries] = useState([]);
     const [stats, setStats] = useState({});
 
@@ -58,7 +50,7 @@ function AdminDashboard() {
         }
     }, [activeTab]);
 
-    // TAB 1: Search and assign barcode
+    // TAB 1: Search + Assign with card style
     const handleSearch = async () => {
         setSelectedUser(null);
         setBarcodeAssignMsg('');
@@ -72,10 +64,10 @@ function AdminDashboard() {
 
     const handleBarcodeAssign = async () => {
         try {
-            const result = await assignBarcode(selectedUser.email, barcode);
-            setBarcodeAssignMsg('Barcode assigned successfully!');
+            await assignBarcode(selectedUser.email, barcode);
+            setBarcodeAssignMsg('✅ Barcode assigned successfully!');
         } catch (e) {
-            setBarcodeAssignMsg('Barcode assignment failed.');
+            setBarcodeAssignMsg('❌ Barcode assignment failed.');
         }
     };
 
@@ -83,9 +75,9 @@ function AdminDashboard() {
     const handleEntryMark = async () => {
         try {
             await markEntry(barcode, venue);
-            setEntryMsg('Entry marked successfully!');
+            setEntryMsg('✅ Entry marked successfully!');
         } catch (e) {
-            setEntryMsg('Entry marking failed.');
+            setEntryMsg('❌ Entry marking failed.');
         }
     };
 
@@ -95,15 +87,15 @@ function AdminDashboard() {
         setUploadMsg('Uploading...');
         try {
             await uploadParticipantsExcel(uploadFile);
-            setUploadMsg('Upload successful!');
+            setUploadMsg('✅ Upload successful!');
         } catch (e) {
-            setUploadMsg('Upload failed.');
+            setUploadMsg('❌ Upload failed.');
         }
     };
 
     return (
         <div className="admin-dashboard app-container">
-            <div className="admin-nav">
+            <div className="header-bar">
                 <h2>ICNAN'25 Conference - Admin Dashboard</h2>
                 <button className="logout-button" onClick={logout}>Logout</button>
             </div>
@@ -120,54 +112,88 @@ function AdminDashboard() {
             {/* TAB 1: Search Participant */}
             {activeTab === 0 && (
                 <div className="panel">
-                    <h3>Search & Assign Barcode</h3>
-                    <input
-                        type="text"
-                        placeholder="Enter email, reference, name or phone"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                    />
-                    <button onClick={handleSearch}>Search</button>
-                    <div style={{ marginTop: 14 }}>
-                        {searchResults.map(user => (
-                            <div
-                                key={user.email}
-                                className="user-row"
-                                onClick={() => setSelectedUser(user)}
-                                style={{ cursor: 'pointer', padding: '12px 0' }}
-                            >
-                                <span>{user.name}</span> <span style={{ opacity: 0.7 }}>{user.email}</span>
-                                <span>Barcode: <b>{user.barcode || '-'}</b></span>
-                            </div>
-                        ))}
+                    <h3 style={{ color: "var(--accent)", marginBottom: '1rem' }}>Search & Assign Barcode</h3>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px' }}>
+                        <input
+                            type="text"
+                            placeholder="Enter email, reference, name or phone"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            style={{ flex: '1', minWidth: '300px' }}
+                        />
+                        <button onClick={handleSearch}>Search</button>
                     </div>
+
+                    {searchResults.length > 0 && searchResults.map(user => (
+                        <div
+                            key={user.email}
+                            className="card"
+                            style={{
+                                cursor: 'pointer',
+                                marginBottom: '1.25rem',
+                                borderColor: selectedUser?.email === user.email ? 'var(--accent)' : 'transparent',
+                                boxShadow: selectedUser?.email === user.email ? '0 0 20px var(--accent2)' : 'none',
+                                backgroundColor: selectedUser?.email === user.email ? 'rgba(231, 72, 72, 0.15)' : 'var(--card-bg)'
+                            }}
+                            onClick={() => {
+                                setSelectedUser(user);
+                                setBarcode(user.barcode || '');
+                                setBarcodeAssignMsg('');
+                            }}
+                        >
+                            <table style={{ width: '100%', color: 'var(--text-main)', backgroundColor: 'transparent' }}>
+                                <tbody>
+                                    <tr>
+                                        <th>Reference No.</th><td>{user.referenceNo}</td>
+                                        <th>Name</th><td>{user.name}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email</th><td>{user.email}</td>
+                                        <th>Mobile</th><td>{user.mobileNo}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Institution</th><td>{user.institution}</td>
+                                        <th>Designation</th><td>{user.designation}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Barcode</th><td colSpan={3}>{user.barcode || <span style={{ color: "var(--error)" }}>Not Assigned</span>}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    ))}
+
                     {selectedUser && (
-                        <div className="assign-section" style={{ marginTop: 16 }}>
-                            <div>
-                                <b>Assign Barcode to:</b> {selectedUser.name} ({selectedUser.email})
+                        <div className="assign-barcode-box">
+                            <div style={{ marginBottom: '10px' }}>
+                                <strong>Assign/Update Barcode for:</strong> <span style={{ color: 'var(--accent)' }}>{selectedUser.name}</span>
                             </div>
                             <input
                                 type="text"
                                 placeholder="Enter barcode"
                                 value={barcode}
                                 onChange={e => setBarcode(e.target.value)}
+                                style={{ width: '240px', fontWeight: 'bold' }}
                             />
-                            <button onClick={handleBarcodeAssign}>Assign</button>
-                            <div>{barcodeAssignMsg}</div>
+                            <button style={{ marginLeft: '14px' }} onClick={handleBarcodeAssign}>Assign</button>
+                            <div style={{ marginTop: '8px', fontWeight: '600', color: barcodeAssignMsg.includes('❌') ? 'var(--error)' : 'var(--success)' }}>
+                                {barcodeAssignMsg}
+                            </div>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* TAB 2: Mark entry */}
+            {/* TAB 2: Mark Entry */}
             {activeTab === 1 && (
                 <div className="panel">
-                    <h3>Mark Entry</h3>
+                    <h3 style={{ color: "var(--accent)" }}>Mark Entry</h3>
                     <input
                         type="text"
                         placeholder="Enter participant barcode"
                         value={barcode}
                         onChange={e => setBarcode(e.target.value)}
+                        style={{ marginBottom: '14px' }}
                     />
                     <input
                         type="text"
@@ -175,29 +201,34 @@ function AdminDashboard() {
                         value={venue}
                         onChange={e => setVenue(e.target.value)}
                     />
-                    <button onClick={handleEntryMark}>Mark Entry</button>
-                    <div>{entryMsg}</div>
+                    <button onClick={handleEntryMark} style={{ marginTop: '18px' }}>Mark Entry</button>
+                    <div style={{ marginTop: '12px', fontWeight: '600', color: entryMsg.includes('❌') ? 'var(--error)' : 'var(--success)' }}>
+                        {entryMsg}
+                    </div>
                 </div>
             )}
 
             {/* TAB 3: Upload report */}
             {activeTab === 2 && (
                 <div className="panel">
-                    <h3>Upload Registration Excel</h3>
+                    <h3 style={{ color: "var(--accent)" }}>Upload Registration Excel</h3>
                     <input
                         type="file"
                         accept=".xlsx,.xls,.csv"
                         onChange={e => setUploadFile(e.target.files[0])}
+                        style={{ marginBottom: '14px' }}
                     />
                     <button onClick={handleFileUpload}>Upload</button>
-                    <div>{uploadMsg}</div>
+                    <div style={{ marginTop: '12px', fontWeight: '600', color: uploadMsg.includes('❌') ? 'var(--error)' : 'var(--success)' }}>
+                        {uploadMsg}
+                    </div>
                 </div>
             )}
 
             {/* TAB 4: All Participants */}
             {activeTab === 3 && (
                 <div className="panel table-container">
-                    <h3>All Participants</h3>
+                    <h3 style={{ color: "var(--accent)", marginBottom: '1rem' }}>All Participants</h3>
                     <table>
                         <thead>
                             <tr>
@@ -230,7 +261,7 @@ function AdminDashboard() {
             {/* TAB 5: Entry Logs & Stats */}
             {activeTab === 4 && (
                 <div className="panel">
-                    <h3>Entry Logs</h3>
+                    <h3 style={{ color: "var(--accent)" }}>Entry Logs</h3>
                     <div>
                         <strong>Total Entries:</strong> {stats.totalEntries || 0} <br />
                         <strong>Unique Participants:</strong> {stats.uniqueParticipants || 0}
