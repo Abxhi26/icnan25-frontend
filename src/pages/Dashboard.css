@@ -1,30 +1,99 @@
+/* dashboard.css - unified dark theme */
+
 .dashboard {
-    background: var(--main-bg);
-    color: var(--text-main);
     min-height: 100vh;
+    background: linear-gradient(145deg, #04050a, #0b101a 60%, #111623 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e5e8f1;
+    padding: 24px;
 }
+
+/* This only appears for a fraction of a second,
+   but we still want it to look good. */
 
 .dashboard-card,
 .wrapper {
-    background: var(--panel-bg);
-    border-radius: 16px;
-    padding: 28px 18px;
-    max-width: 450px;
-    margin: 48px auto 0 auto;
-    border: 1px solid var(--border-dark);
-    color: var(--text-main);
-    box-shadow: 0 2px 15px 0 rgba(34, 44, 72, 0.11);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    backdrop-filter: blur(12px);
+    border-radius: 18px;
+    padding: 28px 22px;
+    max-width: 460px;
+    width: 100%;
+    margin: 0 auto;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow:
+        0 10px 38px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    text-align: center;
 }
 
+.dashboard-card h2,
+.wrapper h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.dashboard-card p,
+.wrapper p {
+    margin-top: 10px;
+    font-size: 15px;
+    color: #a5aabc;
+    line-height: 1.5;
+}
+
+/* For any inputs that appear (temporary redirections) */
 input,
 select {
-    margin-bottom: 12px;
+    width: 100%;
+    margin: 12px 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #0c0e13;
+    color: #e7ebf3;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 15px;
+    outline: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+input:focus,
+select:focus {
+    border-color: rgba(215, 75, 75, 0.4);
+    box-shadow: 0 0 12px rgba(215, 75, 75, 0.15);
+}
+
+/* Buttons (in case dashboard ever shows any) */
+button {
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #d74b4b, #b83b3b);
+    border: none;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(215, 75, 75, 0.12);
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+button:hover {
+    background: linear-gradient(90deg, #c83e3e, #a93232);
+    transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
 @media (max-width: 600px) {
 
     .dashboard-card,
     .wrapper {
-        padding: 11px 4px;
+        padding: 18px 12px;
+    }
+
+    h2 {
+        font-size: 20px;
     }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
     searchParticipants,
@@ -17,40 +17,109 @@ function StaffDashboard() {
     const [searchResults, setSearchResults] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
     const [barcode, setBarcode] = useState('');
-    const [barcodeMsg, setBarcodeMsg] = useState('');
+    const [barcodeMsg, setBarcodeMsg] = useState({ text: '', type: '' });
 
     // Entry marking
     const [venue, setVenue] = useState('');
-    const [entryMsg, setEntryMsg] = useState('');
+    const [entryMsg, setEntryMsg] = useState({ text: '', type: '' });
     const [history, setHistory] = useState([]);
+
+    const searchRef = useRef(null);
+    const barcodeRef = useRef(null);
+
+    // keyboard shortcuts: / focuses search, b focuses barcode (when selected)
+    useEffect(() => {
+        function onKey(e) {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+                e.preventDefault();
+                searchRef.current && searchRef.current.focus();
+            }
+            if (e.key.toLowerCase() === 'b' && selectedUser && document.activeElement.tagName !== 'INPUT') {
+                e.preventDefault();
+                barcodeRef.current && barcodeRef.current.focus();
+            }
+        }
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [selectedUser]);
+
+    const showMsg = (setter, text, type = 'success', timeout = 3500) => {
+        setter({ text, type });
+        if (timeout) setTimeout(() => setter({ text: '', type: '' }), timeout);
+    };
 
     const handleSearch = async () => {
         setSelectedUser(null);
+        setBarcodeMsg({ text: '', type: '' });
+        const term = (searchQuery || '').trim();
+        if (!term) {
+            showMsg(setBarcodeMsg, 'Enter search term (email/ref/name/phone)', 'error');
+            return;
+        }
         try {
-            const res = await searchParticipants(searchQuery);
-            setSearchResults(res.data || res);
-        } catch {
+            const res = await searchParticipants(term);
+            const results = res.data || res;
+            setSearchResults(Array.isArray(results) ? results : []);
+            if (!results || (Array.isArray(results) && results.length === 0)) {
+                showMsg(setBarcodeMsg, 'No participants found', 'error');
+            }
+        } catch (err) {
+            console.error('search error', err);
             setSearchResults([]);
+            showMsg(setBarcodeMsg, 'Search failed', 'error');
         }
     };
 
-    const handleBarcodeAssign = async () => {
-        try {
-            await assignBarcode(selectedUser.email, barcode);
-            setBarcodeMsg('Assigned!');
-        } catch {
-            setBarcodeMsg('Failed.');
+    // when user selected, set barcode and focus input
+    useEffect(() => {
+        if (selectedUser) {
+            setBarcode(selectedUser.barcode || '');
+            setTimeout(() => barcodeRef.current && barcodeRef.current.focus(), 80);
         }
+    }, [selectedUser]);
+
+    const handleBarcodeAssign = async (e) => {
+        if (e) e.preventDefault();
+        if (!selectedUser) {
+            showMsg(setBarcodeMsg, 'Select a participant first', 'error');
+            return;
+        }
+        const code = (barcode || '').trim();
+        if (!code) {
+            showMsg(setBarcodeMsg, 'Enter barcode', 'error');
+            barcodeRef.current && barcodeRef.current.focus();
+            return;
+        }
+        try {
+            const res = await assignBarcode(selectedUser.email, code);
+            const updated = (res && res.participant) ? res.participant : { ...selectedUser, barcode: code };
+            setSelectedUser(updated);
+            setSearchResults(prev => prev.map(p => p.email === updated.email ? { ...p, barcode: updated.barcode } : p));
+            showMsg(setBarcodeMsg, 'Barcode assigned', 'success');
+        } catch (err) {
+            console.error('assign error', err);
+            showMsg(setBarcodeMsg, (err && err.error) ? err.error : 'Assignment failed', 'error');
+        }
+    };
+
+    const onBarcodeKeyDown = (e) => {
+        if (e.key === 'Enter') handleBarcodeAssign(e);
     };
 
     const handleMarkEntry = async () => {
+        const code = (barcode || '').trim();
+        if (!code || !venue) {
+            showMsg(setEntryMsg, 'Provide barcode and venue', 'error');
+            return;
+        }
         try {
-            await markEntry(barcode, venue);
-            setEntryMsg('Entry marked!');
-            const hist = await getEntryHistory(barcode);
-            setHistory(hist.data.entries || []);
-        } catch {
-            setEntryMsg('Error marking entry.');
+            await markEntry(code, venue);
+            showMsg(setEntryMsg, 'Entry marked', 'success');
+            const hist = await getEntryHistory(code);
+            setHistory(hist.data?.entries || []);
+        } catch (err) {
+            console.error('mark entry err', err);
+            showMsg(setEntryMsg, 'Error marking entry', 'error');
         }
     };
 
@@ -60,6 +129,7 @@ function StaffDashboard() {
                 <h2>Staff Dashboard</h2>
                 <button className="logout-button" onClick={logout}>Logout</button>
             </div>
+
             <div className="tabs">
                 <button className={activeTab === 0 ? 'tab active' : 'tab'} onClick={() => setActiveTab(0)}>Search & Assign</button>
                 <button className={activeTab === 1 ? 'tab active' : 'tab'} onClick={() => setActiveTab(1)}>Mark Entry</button>
@@ -68,61 +138,95 @@ function StaffDashboard() {
             {/* Tab 1: Search/Assign */}
             {activeTab === 0 && (
                 <div className="panel">
-                    <h3>Search Participant & Assign Barcode</h3>
-                    <input
-                        type="text"
-                        placeholder="Email, ref, name, phone"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                    />
-                    <button onClick={handleSearch}>Search</button>
-                    <div style={{ marginTop: 12 }}>
-                        {searchResults.map(user => (
-                            <div
-                                key={user.email}
-                                className="user-row"
-                                onClick={() => setSelectedUser(user)}
-                                style={{ cursor: 'pointer', padding: '12px 0' }}
-                            >
-                                <span>{user.name}</span>
-                                <span>Barcode: <b>{user.barcode || '-'}</b></span>
-                            </div>
-                        ))}
+                    <h3 className="panel-title">Search Participant & Assign Barcode</h3>
+
+                    <div className="search-row">
+                        <input
+                            ref={searchRef}
+                            type="text"
+                            placeholder="Email, ref, name, phone (press / to focus)"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                            className="search-input"
+                        />
+                        <button className="btn" onClick={handleSearch}>Search</button>
                     </div>
-                    {selectedUser && (
-                        <div style={{ marginTop: 12 }}>
-                            <div>Assign Barcode to: {selectedUser.name} ({selectedUser.email})</div>
-                            <input
-                                type="text"
-                                placeholder="Barcode"
-                                value={barcode}
-                                onChange={e => setBarcode(e.target.value)}
-                            />
-                            <button onClick={handleBarcodeAssign}>Assign</button>
-                            <div>{barcodeMsg}</div>
-                        </div>
-                    )}
+
+                    <div className="results-area">
+                        {searchResults.map(user => {
+                            const isSelected = selectedUser && selectedUser.email === user.email;
+                            return (
+                                <div
+                                    key={user.email}
+                                    className={`user-row ${isSelected ? 'selected' : ''}`}
+                                >
+                                    <div onClick={() => { setSelectedUser(user); setBarcode(user.barcode || ''); }}>
+                                        <div className="row-top">
+                                            <div className="name">{user.name}</div>
+                                            <div className="email">{user.email}</div>
+                                        </div>
+                                        <div className="row-bottom">
+                                            <div className="ref">{user.referenceNo}</div>
+                                            <div className={`barcode-label ${user.barcode ? 'has' : ''}`}>{user.barcode || 'Not assigned'}</div>
+                                        </div>
+                                    </div>
+
+                                    {isSelected && (
+                                        <div className="assign-inline">
+                                            <input
+                                                ref={barcodeRef}
+                                                className="assign-input"
+                                                value={barcode}
+                                                onChange={e => setBarcode(e.target.value)}
+                                                onKeyDown={onBarcodeKeyDown}
+                                                placeholder="Type barcode and press Enter (or press 'b')"
+                                            />
+                                            <button className="btn-ghost" onClick={handleBarcodeAssign}>Assign</button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {searchResults.length === 0 && <div className="muted">No results — try searching.</div>}
+                    </div>
+
+                    {barcodeMsg.text && <div className={`msg ${barcodeMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>{barcodeMsg.text}</div>}
                 </div>
             )}
 
             {/* Tab 2: Mark Entry */}
             {activeTab === 1 && (
                 <div className="panel">
-                    <h3>Mark Entry</h3>
-                    <input
-                        type="text"
-                        placeholder="Participant Barcode"
-                        value={barcode}
-                        onChange={e => setBarcode(e.target.value)}
-                    />
-                    <input
-                        type="text"
-                        placeholder="Venue"
-                        value={venue}
-                        onChange={e => setVenue(e.target.value)}
-                    />
-                    <button onClick={handleMarkEntry}>Mark Entry</button>
-                    <div>{entryMsg}</div>
+                    <h3 className="panel-title">Mark Entry</h3>
+
+                    <div className="field-row">
+                        <input
+                            type="text"
+                            placeholder="Enter participant barcode (press b to focus)"
+                            value={barcode}
+                            ref={barcodeRef}
+                            onChange={e => setBarcode(e.target.value)}
+                            className="wide-input"
+                        />
+                    </div>
+
+                    <div className="field-row">
+                        <input
+                            type="text"
+                            placeholder="Venue (e.g., Main Hall)"
+                            value={venue}
+                            onChange={e => setVenue(e.target.value)}
+                            className="wide-input"
+                        />
+                    </div>
+
+                    <div className="field-row">
+                        <button className="btn" onClick={handleMarkEntry}>Mark Entry</button>
+                    </div>
+
+                    {entryMsg.text && <div className={`msg ${entryMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>{entryMsg.text}</div>}
+
                     <div style={{ marginTop: 16 }}>
                         <b>Entry History (recent):</b>
                         <ul>
