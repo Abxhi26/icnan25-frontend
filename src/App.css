@@ -1,151 +1,115 @@
 :root {
-  --main-bg: #181a29;
-  --panel-bg: #22243a;
-  --primary-accent: #3841a3;
-  --secondary-accent: #262b4d;
-  --success: #05b169;
-  --danger: #d7263d;
-  --text-main: #f3f6fa;
-  --text-light: #b0b4c7;
-  --border-dark: #292b41;
+  --main-bg: #09090b;
+  --panel-bg: #17171a;
+  --card-bg: #19191e;
+  --accent: #d7263d;
+  --accent2: #ff5860;
+  --success: #10b981;
+  --error: #f43f5e;
+  --text-main: #fff;
+  --text-secondary: #cfcccc;
+  --border: #2d2d34;
+  --highlight: #ff5860;
 }
 
 body {
   background: var(--main-bg);
   color: var(--text-main);
-  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, 'sans-serif';
-  min-height: 100vh;
-  margin: 0;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-a {
-  color: var(--primary-accent);
-  text-decoration: none;
+button,
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+button:active,
+.btn:active {
+  background: var(--accent2);
+}
+
+button:disabled {
+  background: #444;
+  color: #aaa;
+  cursor: not-allowed;
 }
 
 input,
 select,
 textarea {
-  background: var(--panel-bg);
+  background: #161618;
   color: var(--text-main);
-  border: 1px solid var(--border-dark);
-  border-radius: 6px;
-  padding: 9px 13px;
+  border: 1.6px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 15px;
   margin-bottom: 10px;
+  transition: border-color 0.12s;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 1px solid var(--primary-accent);
+  border-color: var(--accent);
+  outline: none;
 }
 
-button,
-.btn {
-  background: var(--primary-accent);
-  color: #fff;
-  font-weight: bold;
-  border: none;
-  border-radius: 7px;
-  padding: 10px 24px;
-  min-width: 100px;
-  cursor: pointer;
-  transition: background 0.18s;
+.table-container {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 25px 0 rgba(255, 88, 96, 0.09);
+  border: 1.5px solid var(--accent2);
 }
 
-button:disabled,
-.btn:disabled {
-  background: #363950;
-  color: #888;
-  cursor: not-allowed;
-}
-
-button.logout-button {
-  background: var(--danger);
-}
-
-.card,
-.panel,
-.details-card,
-.box {
-  background: var(--panel-bg);
-  color: var(--text-main);
-  border-radius: 12px;
-  padding: 28px 22px;
-  margin-bottom: 20px;
-  border: 1px solid var(--border-dark);
-}
-
-.tabs {
-  background: var(--panel-bg);
-}
-
-.tab {
-  background: transparent;
-  color: var(--text-light);
-  border: none;
-  padding: 10px 18px;
-  margin: 0 4px;
-  border-radius: 7px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.17s;
-}
-
-.tab.active,
-.tab:active {
-  background: var(--primary-accent);
-  color: #fff;
-}
-
-.status-badge {
-  background: #1e2136;
-  color: var(--success);
-  padding: 5px 10px;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: bold;
-  margin-right: 8px;
-}
-
-.error {
-  color: var(--danger);
-  font-weight: 500;
-}
-
-.success {
-  color: var(--success);
-}
-
-.table-container,
 table {
-  background: var(--panel-bg);
-  color: var(--text-main);
-  border-radius: 10px;
-  overflow: auto;
   width: 100%;
+  color: var(--text-main);
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 13px;
 }
 
 th {
-  background: var(--secondary-accent);
+  background: var(--accent);
   color: #fff;
-  border-bottom: 2px solid var(--primary-accent);
-  text-align: left;
-  padding: 12px 10px;
+  font-size: 16px;
 }
 
-td {
-  border-bottom: 1px solid var(--border-dark);
-  padding: 11px 8px;
+tr:nth-child(even) {
+  background: #141416;
 }
 
-::-webkit-scrollbar {
-  background: #20222e;
-  width: 10px;
-  border-radius: 4px;
+.participant-card {
+  background: var(--panel-bg);
+  border: 2px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 28px;
+  margin-bottom: 20px;
+  color: var(--text-main);
+  box-shadow: 0 2px 16px 0 rgba(256, 20, 40, 0.11);
+  transition: box-shadow 0.2s;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #373857;
-  border-radius: 6px;
+.participant-card:hover {
+  box-shadow: 0 4px 24px 3px rgba(255, 40, 60, 0.09);
+}
+
+.assign-barcode-box {
+  background: var(--card-bg);
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  margin-top: 18px;
+  padding: 18px 15px;
 }
