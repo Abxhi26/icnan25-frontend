@@ -27,27 +27,12 @@ function StaffDashboard() {
     const searchRef = useRef(null);
     const barcodeRef = useRef(null);
 
-    // keyboard shortcuts: / focuses search, b focuses barcode (when selected)
-    useEffect(() => {
-        function onKey(e) {
-            if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
-                e.preventDefault();
-                searchRef.current && searchRef.current.focus();
-            }
-            if (e.key.toLowerCase() === 'b' && selectedUser && document.activeElement.tagName !== 'INPUT') {
-                e.preventDefault();
-                barcodeRef.current && barcodeRef.current.focus();
-            }
-        }
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [selectedUser]);
-
     const showMsg = (setter, text, type = 'success', timeout = 3500) => {
         setter({ text, type });
         if (timeout) setTimeout(() => setter({ text: '', type: '' }), timeout);
     };
 
+    // search
     const handleSearch = async () => {
         setSelectedUser(null);
         setBarcodeMsg({ text: '', type: '' });
@@ -70,11 +55,11 @@ function StaffDashboard() {
         }
     };
 
-    // when user selected, set barcode and focus input
+    // focus barcode when user selected
     useEffect(() => {
         if (selectedUser) {
             setBarcode(selectedUser.barcode || '');
-            setTimeout(() => barcodeRef.current && barcodeRef.current.focus(), 80);
+            setTimeout(() => barcodeRef.current && barcodeRef.current.focus(), 70);
         }
     }, [selectedUser]);
 
@@ -144,7 +129,7 @@ function StaffDashboard() {
                         <input
                             ref={searchRef}
                             type="text"
-                            placeholder="Email, ref, name, phone (press / to focus)"
+                            placeholder="Email, ref, name, phone (press Enter to search)"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleSearch()}
@@ -154,6 +139,8 @@ function StaffDashboard() {
                     </div>
 
                     <div className="results-area">
+                        {searchResults.length === 0 && <div className="muted">No results — try searching.</div>}
+
                         {searchResults.map(user => {
                             const isSelected = selectedUser && selectedUser.email === user.email;
                             return (
@@ -161,26 +148,39 @@ function StaffDashboard() {
                                     key={user.email}
                                     className={`user-row ${isSelected ? 'selected' : ''}`}
                                 >
-                                    <div onClick={() => { setSelectedUser(user); setBarcode(user.barcode || ''); }}>
-                                        <div className="row-top">
-                                            <div className="name">{user.name}</div>
-                                            <div className="email">{user.email}</div>
-                                        </div>
-                                        <div className="row-bottom">
-                                            <div className="ref">{user.referenceNo}</div>
-                                            <div className={`barcode-label ${user.barcode ? 'has' : ''}`}>{user.barcode || 'Not assigned'}</div>
+                                    <div className="user-top" onClick={() => { setSelectedUser(user); }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                                            <div>
+                                                <div style={{ fontWeight: 800, fontSize: 15 }}>{user.name}</div>
+                                                <div style={{ color: 'var(--muted)' }}>{user.institution}</div>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontWeight: 800 }}>{user.referenceNo}</div>
+                                                <div style={{ color: 'var(--muted)' }}>{user.mobileNo || '-'}</div>
+                                            </div>
                                         </div>
                                     </div>
 
+                                    {/* Show full details when selected or always show as compact block below */}
+                                    <div className="user-details">
+                                        <div className="detail-row"><span className="detail-label">Email</span><span className="detail-value">{user.email}</span></div>
+                                        <div className="detail-row"><span className="detail-label">Designation</span><span className="detail-value">{user.designation || '-'}</span></div>
+                                        <div className="detail-row"><span className="detail-label">Registered Category</span><span className="detail-value">{user.registeredCategory || '-'}</span></div>
+                                        <div className="detail-row"><span className="detail-label">Paper ID</span><span className="detail-value">{user.paperId || '-'}</span></div>
+                                        <div className="detail-row"><span className="detail-label">Invoice</span><span className="detail-value">{user.invoiceNo || '-'}</span></div>
+                                    </div>
+
+                                    {/* When selected, show top assign box inside this card */}
                                     {isSelected && (
-                                        <div className="assign-inline">
+                                        <div className="assign-section assign-top-inline" style={{ marginTop: 10 }}>
+                                            <label className="assign-label">Assign / Update Barcode</label>
                                             <input
                                                 ref={barcodeRef}
-                                                className="assign-input"
+                                                className="assign-input-inline"
                                                 value={barcode}
                                                 onChange={e => setBarcode(e.target.value)}
                                                 onKeyDown={onBarcodeKeyDown}
-                                                placeholder="Type barcode and press Enter (or press 'b')"
+                                                placeholder="Type barcode and press Enter"
                                             />
                                             <button className="btn-ghost" onClick={handleBarcodeAssign}>Assign</button>
                                         </div>
@@ -188,7 +188,6 @@ function StaffDashboard() {
                                 </div>
                             );
                         })}
-                        {searchResults.length === 0 && <div className="muted">No results — try searching.</div>}
                     </div>
 
                     {barcodeMsg.text && <div className={`msg ${barcodeMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>{barcodeMsg.text}</div>}
@@ -203,26 +202,31 @@ function StaffDashboard() {
                     <div className="field-row">
                         <input
                             type="text"
-                            placeholder="Enter participant barcode (press b to focus)"
+                            placeholder="Enter participant barcode (or select from search)"
                             value={barcode}
-                            ref={barcodeRef}
                             onChange={e => setBarcode(e.target.value)}
                             className="wide-input"
                         />
                     </div>
 
-                    <div className="field-row">
-                        <input
-                            type="text"
-                            placeholder="Venue (e.g., Main Hall)"
+                    <div className="field-row" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <select
                             value={venue}
-                            onChange={e => setVenue(e.target.value)}
-                            className="wide-input"
-                        />
-                    </div>
+                            onChange={(e) => setVenue(e.target.value)}
+                            className="venue-select"
+                            aria-label="Select venue"
+                        >
+                            <option value="">Select venue...</option>
+                            <option value="Main Hall">Main Hall</option>
+                            <option value="Registration">Registration</option>
+                            <option value="Auditorium A">Auditorium A</option>
+                            <option value="Auditorium B">Auditorium B</option>
+                            <option value="Exhibition">Exhibition</option>
+                            <option value="Food Court">Food Court</option>
+                            <option value="VIP Lounge">VIP Lounge</option>
+                        </select>
 
-                    <div className="field-row">
-                        <button className="btn" onClick={handleMarkEntry}>Mark Entry</button>
+                        <button className="btn" onClick={handleMarkEntry} style={{ flex: '0 0 auto' }}>Mark Entry</button>
                     </div>
 
                     {entryMsg.text && <div className={`msg ${entryMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>{entryMsg.text}</div>}

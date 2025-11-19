@@ -272,17 +272,26 @@ function AdminDashboard() {
                             className="wide-input"
                         />
                     </div>
-                    <div className="field-row">
-                        <input
-                            type="text"
-                            placeholder="Venue (e.g., Main Hall)"
+
+                    <div className="field-row" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <select
                             value={venue}
-                            onChange={e => setVenue(e.target.value)}
-                            className="wide-input"
-                        />
-                    </div>
-                    <div className="field-row">
-                        <button className="btn" onClick={handleEntryMark}>Mark Entry</button>
+                            onChange={(e) => setVenue(e.target.value)}
+                            className="venue-select"
+                            aria-label="Select venue"
+                        >
+                            {/* Customize this list */}
+                            <option value="">Select venue...</option>
+                            <option value="Main Hall">Main Hall</option>
+                            <option value="Registration">Registration</option>
+                            <option value="Auditorium A">Auditorium A</option>
+                            <option value="Auditorium B">Auditorium B</option>
+                            <option value="Exhibition">Exhibition</option>
+                            <option value="Food Court">Food Court</option>
+                            <option value="VIP Lounge">VIP Lounge</option>
+                        </select>
+
+                        <button className="btn" onClick={handleEntryMark} style={{ flex: '0 0 auto' }}>Mark Entry</button>
                     </div>
 
                     {entryMsg.text && (
@@ -290,6 +299,7 @@ function AdminDashboard() {
                     )}
                 </div>
             )}
+
 
             {/* TAB 3: Upload report */}
             {activeTab === 2 && (
