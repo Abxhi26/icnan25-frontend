@@ -16,7 +16,8 @@ const TABS = [
     "Mark Entry",
     "Upload Report",
     "All Participants",
-    "Entry Logs"
+    "Entry Logs",
+    "Accomodation"
 ];
 
 function AdminDashboard() {
@@ -41,6 +42,7 @@ function AdminDashboard() {
     const [stats, setStats] = useState({});
 
     const barcodeInputRef = useRef(null);
+    
 
     // load participants / entries when tab changes
     useEffect(() => {
@@ -179,12 +181,13 @@ function AdminDashboard() {
         }
         setTimeout(() => setRefreshing(false), 800);
     };
+    
 
 
     return (
         <div className="admin-dashboard app-container">
             <div className="header-bar">
-                <h2>ICNAN'25 Conference - Admin Dashboard</h2>
+                <h1>ICNAN'25 Conference - Admin Dashboard</h1>
                 <div className="header-actions">
                     <button className="logout-button" onClick={logout}>Logout</button>
                 </div>

@@ -311,11 +311,21 @@
 }
 
 /* table styles */
-.table-container table,
-table th,
-table td {
-    border-collapse: collapse;
+.table-container {
+    background: var(--panel-bg);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 2px 38px 0 var(--accent2);
+    border: 2px solid var(--accent2);
+    overflow-x: auto;
+}
+
+.table-container table {
     width: 100%;
+    /* make table use full backboard width */
+    min-width: 100%;
+    /* avoid shrinking inside */
+    border-collapse: collapse;
 }
 
 table th {
@@ -423,4 +433,9 @@ table td {
 .logs-table {
     width: 100%;
     border-collapse: collapse;
+}
+
+.all-participants-wrapper {
+  max-width: 1100px;
+  margin: 32px auto;        /* centers horizontally */
 }

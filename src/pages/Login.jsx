@@ -37,7 +37,7 @@ export default function Login() {
     return (
         <div className="login-background">
             <div className="login-card">
-                <h1 className="brand">Smart Entry System</h1>
+                <h1 className="brand">ICNAN'25</h1>
 
                 <form onSubmit={handleLogin} className="login-form">
                     <div className="tab-switch" role="tablist" aria-label="Login role switch">

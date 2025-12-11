@@ -51,3 +51,4 @@ export const getAllEntries = (params = {}) =>
 
 export const getEntryStats = () =>
     api.get('/entries/stats');
+
