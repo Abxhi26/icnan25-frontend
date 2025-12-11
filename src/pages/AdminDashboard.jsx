@@ -301,13 +301,11 @@ function AdminDashboard() {
                         >
                             {/* Customize this list */}
                             <option value="">Select venue...</option>
-                            <option value="Main Hall">Main Hall</option>
-                            <option value="Registration">Registration</option>
-                            <option value="Auditorium A">Auditorium A</option>
-                            <option value="Auditorium B">Auditorium B</option>
-                            <option value="Exhibition">Exhibition</option>
-                            <option value="Food Court">Food Court</option>
-                            <option value="VIP Lounge">VIP Lounge</option>
+                            <option value="Main Hall">Ambedkar Auditoriuml (TT018)</option>
+                            <option value="Registration">Shakespeare Gallery (TT028)</option>
+                            <option value="Auditorium A">Smart classroom (TT312)</option>
+                            <option value="Auditorium B">Smart classroom (TT311)</option>
+                            
                         </select>
 
                         <button className="btn" onClick={handleEntryMark} style={{ flex: '0 0 auto' }}>Mark Entry</button>
