@@ -197,27 +197,27 @@ function StaffDashboard() {
 
                                     <div className="user-details">
                                         <div className="detail-row">
-                                            <span className="detail-label">Email</span>
+                                            <span className="detail-label">Email: </span>
                                             <span className="detail-value">{user.email}</span>
                                         </div>
                                         <div className="detail-row">
-                                            <span className="detail-label">Registered Category</span>
+                                            <span className="detail-label">Registered Category: </span>
                                             <span className="detail-value">{user.registeredCategory || '-'}</span>
                                         </div>
                                         <div className="detail-row">
-                                            <span className="detail-label">Paper ID</span>
+                                            <span className="detail-label">Paper ID: </span>
                                             <span className="detail-value">{user.paperId || '-'}</span>
                                         </div>
                                         <div className="detail-row">
-                                            <span className="detail-label">Amount Paid</span>
+                                            <span className="detail-label">Amount Paid: </span>
                                             <span className="detail-value">{user.amountPaid ?? '-'}</span>
                                         </div>
                                         <div className="detail-row">
-                                            <span className="detail-label">Invoice</span>
+                                            <span className="detail-label">Invoice:- </span>
                                             <span className="detail-value">{user.invoiceNo || '-'}</span>
                                         </div>
                                         <div className="detail-row">
-                                            <span className="detail-label">Barcode</span>
+                                            <span className="detail-label">Barcode:- </span>
                                             <span className="detail-value">
                                                 {user.barcode || <span style={{ color: 'var(--error)' }}>Not assigned</span>}
                                             </span>
