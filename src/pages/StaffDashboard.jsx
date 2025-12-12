@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import {
     searchParticipants,
     assignBarcode,
+    deassignBarcode,
     markEntry,
     getEntryHistory,
 } from '../services/api';
@@ -77,13 +78,39 @@ function StaffDashboard() {
         }
         try {
             const res = await assignBarcode(selectedUser.email, code);
-            const updated = (res && res.participant) ? res.participant : { ...selectedUser, barcode: code };
+            const updated = (res && res.participant)
+                ? { ...selectedUser, ...res.participant }
+                : { ...selectedUser, barcode: code };
             setSelectedUser(updated);
-            setSearchResults(prev => prev.map(p => p.email === updated.email ? { ...p, barcode: updated.barcode } : p));
+            setSearchResults(prev =>
+                prev.map(p => p.email === updated.email ? { ...p, barcode: updated.barcode } : p)
+            );
             showMsg(setBarcodeMsg, 'Barcode assigned', 'success');
         } catch (err) {
             console.error('assign error', err);
-            showMsg(setBarcodeMsg, (err && err.error) ? err.error : 'Assignment failed', 'error');
+            const msg = err?.response?.data?.error || 'Assignment failed';
+            showMsg(setBarcodeMsg, msg, 'error');
+        }
+    };
+
+    const handleBarcodeDeassign = async () => {
+        if (!selectedUser) {
+            showMsg(setBarcodeMsg, 'Select a participant first', 'error');
+            return;
+        }
+        try {
+            await deassignBarcode(selectedUser.email);
+            const updated = { ...selectedUser, barcode: null };
+            setSelectedUser(updated);
+            setBarcode('');
+            setSearchResults(prev =>
+                prev.map(p => p.email === updated.email ? { ...p, barcode: null } : p)
+            );
+            showMsg(setBarcodeMsg, 'Barcode removed', 'success');
+        } catch (err) {
+            console.error('deassign error', err);
+            const msg = err?.response?.data?.error || 'Failed to remove barcode';
+            showMsg(setBarcodeMsg, msg, 'error');
         }
     };
 
@@ -104,7 +131,8 @@ function StaffDashboard() {
             setHistory(hist.data?.entries || []);
         } catch (err) {
             console.error('mark entry err', err);
-            showMsg(setEntryMsg, 'Error marking entry', 'error');
+            const msg = err?.response?.data?.error || 'Error marking entry';
+            showMsg(setEntryMsg, msg, 'error');
         }
     };
 
@@ -116,8 +144,12 @@ function StaffDashboard() {
             </div>
 
             <div className="tabs">
-                <button className={activeTab === 0 ? 'tab active' : 'tab'} onClick={() => setActiveTab(0)}>Search & Assign</button>
-                <button className={activeTab === 1 ? 'tab active' : 'tab'} onClick={() => setActiveTab(1)}>Mark Entry</button>
+                <button className={activeTab === 0 ? 'tab active' : 'tab'} onClick={() => setActiveTab(0)}>
+                    Search & Assign
+                </button>
+                <button className={activeTab === 1 ? 'tab active' : 'tab'} onClick={() => setActiveTab(1)}>
+                    Mark Entry
+                </button>
             </div>
 
             {/* Tab 1: Search/Assign */}
@@ -139,7 +171,9 @@ function StaffDashboard() {
                     </div>
 
                     <div className="results-area">
-                        {searchResults.length === 0 && <div className="muted">No results — try searching.</div>}
+                        {searchResults.length === 0 && (
+                            <div className="muted">No results — try searching.</div>
+                        )}
 
                         {searchResults.map(user => {
                             const isSelected = selectedUser && selectedUser.email === user.email;
@@ -161,16 +195,35 @@ function StaffDashboard() {
                                         </div>
                                     </div>
 
-                                    {/* Show full details when selected or always show as compact block below */}
                                     <div className="user-details">
-                                        <div className="detail-row"><span className="detail-label">Email</span><span className="detail-value">{user.email}</span></div>
-                                        <div className="detail-row"><span className="detail-label">Designation</span><span className="detail-value">{user.designation || '-'}</span></div>
-                                        <div className="detail-row"><span className="detail-label">Registered Category</span><span className="detail-value">{user.registeredCategory || '-'}</span></div>
-                                        <div className="detail-row"><span className="detail-label">Paper ID</span><span className="detail-value">{user.paperId || '-'}</span></div>
-                                        <div className="detail-row"><span className="detail-label">Invoice</span><span className="detail-value">{user.invoiceNo || '-'}</span></div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">Email</span>
+                                            <span className="detail-value">{user.email}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">Registered Category</span>
+                                            <span className="detail-value">{user.registeredCategory || '-'}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">Paper ID</span>
+                                            <span className="detail-value">{user.paperId || '-'}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">Amount Paid</span>
+                                            <span className="detail-value">{user.amountPaid ?? '-'}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">Invoice</span>
+                                            <span className="detail-value">{user.invoiceNo || '-'}</span>
+                                        </div>
+                                        <div className="detail-row">
+                                            <span className="detail-label">Barcode</span>
+                                            <span className="detail-value">
+                                                {user.barcode || <span style={{ color: 'var(--error)' }}>Not assigned</span>}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    {/* When selected, show top assign box inside this card */}
                                     {isSelected && (
                                         <div className="assign-section assign-top-inline" style={{ marginTop: 10 }}>
                                             <label className="assign-label">Assign / Update Barcode</label>
@@ -183,6 +236,15 @@ function StaffDashboard() {
                                                 placeholder="Type barcode and press Enter"
                                             />
                                             <button className="btn-ghost" onClick={handleBarcodeAssign}>Assign</button>
+                                            {selectedUser?.barcode && (
+                                                <button
+                                                    type="button"
+                                                    className="btn-ghost danger"
+                                                    onClick={handleBarcodeDeassign}
+                                                >
+                                                    Deassign
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -190,7 +252,11 @@ function StaffDashboard() {
                         })}
                     </div>
 
-                    {barcodeMsg.text && <div className={`msg ${barcodeMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>{barcodeMsg.text}</div>}
+                    {barcodeMsg.text && (
+                        <div className={`msg ${barcodeMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>
+                            {barcodeMsg.text}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -217,25 +283,30 @@ function StaffDashboard() {
                             aria-label="Select venue"
                         >
                             <option value="">Select venue...</option>
-                            <option value="Main Hall">Main Hall</option>
-                            <option value="Registration">Registration</option>
-                            <option value="Auditorium A">Auditorium A</option>
-                            <option value="Auditorium B">Auditorium B</option>
-                            <option value="Exhibition">Exhibition</option>
-                            <option value="Food Court">Food Court</option>
-                            <option value="VIP Lounge">VIP Lounge</option>
+                            <option value="Main Hall">Ambedkar Auditoriuml (TT018)</option>
+                            <option value="Registration">Shakespeare Gallery (TT028)</option>
+                            <option value="Auditorium A">Smart classroom (TT312)</option>
+                            <option value="Auditorium B">Smart classroom (TT311)</option>
                         </select>
 
-                        <button className="btn" onClick={handleMarkEntry} style={{ flex: '0 0 auto' }}>Mark Entry</button>
+                        <button className="btn" onClick={handleMarkEntry} style={{ flex: '0 0 auto' }}>
+                            Mark Entry
+                        </button>
                     </div>
 
-                    {entryMsg.text && <div className={`msg ${entryMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>{entryMsg.text}</div>}
+                    {entryMsg.text && (
+                        <div className={`msg ${entryMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>
+                            {entryMsg.text}
+                        </div>
+                    )}
 
                     <div style={{ marginTop: 16 }}>
                         <b>Entry History (recent):</b>
                         <ul>
                             {history.map(entry => (
-                                <li key={entry.id}>{entry.venue} - {new Date(entry.timestamp).toLocaleString()}</li>
+                                <li key={entry.id}>
+                                    {entry.venue} - {new Date(entry.timestamp).toLocaleString()}
+                                </li>
                             ))}
                         </ul>
                     </div>

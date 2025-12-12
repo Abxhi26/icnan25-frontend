@@ -5,6 +5,7 @@ import {
     getAllParticipants,
     uploadParticipantsExcel,
     assignBarcode,
+    deassignBarcode,
     markEntry,
     getAllEntries,
     getEntryStats
@@ -41,8 +42,8 @@ function AdminDashboard() {
     const [allEntries, setAllEntries] = useState([]);
     const [stats, setStats] = useState({});
 
+    const [refreshing, setRefreshing] = useState(false);
     const barcodeInputRef = useRef(null);
-    
 
     // load participants / entries when tab changes
     useEffect(() => {
@@ -60,7 +61,6 @@ function AdminDashboard() {
         if (selectedUser) {
             setBarcode(selectedUser.barcode || '');
             setBarcodeAssignMsg({ text: '', type: '' });
-            // small delay helps focus after re-render
             setTimeout(() => {
                 if (barcodeInputRef.current) barcodeInputRef.current.focus();
             }, 70);
@@ -75,7 +75,7 @@ function AdminDashboard() {
         }
     };
 
-    // TAB 1: Search + Assign with card style
+    // TAB 1: Search + Assign
     const handleSearch = async () => {
         setSelectedUser(null);
         setBarcodeAssignMsg({ text: '', type: '' });
@@ -115,19 +115,38 @@ function AdminDashboard() {
 
         try {
             const res = await assignBarcode(selectedUser.email, code);
-            // If API returns updated participant use it, else update local UI
-            const updated = (res && res.participant) ? res.participant : { ...selectedUser, barcode: code };
+            const updated = (res && res.participant)
+                ? { ...selectedUser, ...res.participant }
+                : { ...selectedUser, barcode: code };
             setSelectedUser(updated);
-            // also update searchResults list
             setSearchResults(prev => prev.map(p => p.email === updated.email ? { ...p, barcode: updated.barcode } : p));
             showMsg(setBarcodeAssignMsg, 'Barcode assigned successfully', 'success', 3500);
         } catch (err) {
             console.error('Assign error', err);
-            showMsg(setBarcodeAssignMsg, (err && err.error) ? err.error : 'Barcode assignment failed', 'error', 4500);
+            const msg = err?.response?.data?.error || 'Barcode assignment failed';
+            showMsg(setBarcodeAssignMsg, msg, 'error', 4500);
         }
     };
 
-    // allow Enter key to assign in the input (no button click required)
+    const handleBarcodeDeassign = async () => {
+        if (!selectedUser) {
+            showMsg(setBarcodeAssignMsg, 'Select a participant first', 'error');
+            return;
+        }
+        try {
+            await deassignBarcode(selectedUser.email);
+            const updated = { ...selectedUser, barcode: null };
+            setSelectedUser(updated);
+            setBarcode('');
+            setSearchResults(prev => prev.map(p => p.email === updated.email ? { ...p, barcode: null } : p));
+            showMsg(setBarcodeAssignMsg, 'Barcode removed successfully', 'success', 3500);
+        } catch (err) {
+            console.error('Deassign error', err);
+            const msg = err?.response?.data?.error || 'Barcode removal failed';
+            showMsg(setBarcodeAssignMsg, msg, 'error', 4500);
+        }
+    };
+
     const onBarcodeKeyDown = (e) => {
         if (e.key === 'Enter') {
             handleBarcodeAssign(e);
@@ -146,7 +165,8 @@ function AdminDashboard() {
             showMsg(setEntryMsg, 'Entry marked successfully', 'success');
         } catch (err) {
             console.error('Mark entry error', err);
-            showMsg(setEntryMsg, 'Entry marking failed', 'error');
+            const msg = err?.response?.data?.error || 'Entry marking failed';
+            showMsg(setEntryMsg, msg, 'error');
         }
     };
 
@@ -163,17 +183,16 @@ function AdminDashboard() {
             setUploadFile(null);
         } catch (err) {
             console.error('Upload error', err);
-            showMsg(setUploadMsg, 'Upload failed', 'error', 6000);
+            const msg = err?.response?.data?.error || 'Upload failed';
+            showMsg(setUploadMsg, msg, 'error', 6000);
         }
     };
-    const [refreshing, setRefreshing] = useState(false);
 
     const refreshLogs = async () => {
         setRefreshing(true);
         try {
             const entriesRes = await getAllEntries();
             const statsRes = await getEntryStats();
-
             setAllEntries(entriesRes.data || entriesRes);
             setStats(statsRes.data || statsRes);
         } catch (err) {
@@ -181,8 +200,6 @@ function AdminDashboard() {
         }
         setTimeout(() => setRefreshing(false), 800);
     };
-    
-
 
     return (
         <div className="admin-dashboard app-container">
@@ -221,7 +238,9 @@ function AdminDashboard() {
                     </div>
 
                     <div className="results-area">
-                        {searchResults.length === 0 && <div className="muted">No results to show — try searching above.</div>}
+                        {searchResults.length === 0 && (
+                            <div className="muted">No results to show — try searching above.</div>
+                        )}
 
                         {searchResults.map(user => {
                             const isSelected = selectedUser && selectedUser.email === user.email;
@@ -240,15 +259,22 @@ function AdminDashboard() {
                                             <div className="u-ref">{user.referenceNo}</div>
                                             <div className="u-name">{user.name}</div>
                                             <div className="u-institution">{user.institution}</div>
+                                            <div className="u-extra">
+                                                <span><b>Paper ID:</b> {user.paperId || '-'}</span>
+                                                <span style={{ marginLeft: 16 }}>
+                                                    <b>Amount:</b> {user.amountPaid ?? '-'}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="u-right">
                                             <div className="u-email">{user.email}</div>
                                             <div className="u-phone">{user.mobileNo || '-'}</div>
-                                            <div className={`u-barcode ${user.barcode ? 'has' : 'none'}`}>{user.barcode || 'Not assigned'}</div>
+                                            <div className={`u-barcode ${user.barcode ? 'has' : 'none'}`}>
+                                                {user.barcode || 'Not assigned'}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* When selected, show top assign box inside this card */}
                                     {isSelected && (
                                         <div className="assign-section assign-top-inline">
                                             <label className="assign-label">Assign / Update Barcode</label>
@@ -261,6 +287,15 @@ function AdminDashboard() {
                                                 placeholder="Type barcode and press Enter"
                                             />
                                             <button className="btn-ghost" onClick={handleBarcodeAssign}>Assign</button>
+                                            {selectedUser?.barcode && (
+                                                <button
+                                                    type="button"
+                                                    className="btn-ghost danger"
+                                                    onClick={handleBarcodeDeassign}
+                                                >
+                                                    Deassign
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -268,7 +303,6 @@ function AdminDashboard() {
                         })}
                     </div>
 
-                    {/* global feedback for assign */}
                     {barcodeAssignMsg.text && (
                         <div className={`msg ${barcodeAssignMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>
                             {barcodeAssignMsg.text}
@@ -299,16 +333,16 @@ function AdminDashboard() {
                             className="venue-select"
                             aria-label="Select venue"
                         >
-                            {/* Customize this list */}
                             <option value="">Select venue...</option>
-                            <option value="Main Hall">Ambedkar Auditoriuml (TT018)</option>
+                            <option value="Main Hall">Ambedkar Auditorium (TT018)</option>
                             <option value="Registration">Shakespeare Gallery (TT028)</option>
                             <option value="Auditorium A">Smart classroom (TT312)</option>
                             <option value="Auditorium B">Smart classroom (TT311)</option>
-                            
                         </select>
 
-                        <button className="btn" onClick={handleEntryMark} style={{ flex: '0 0 auto' }}>Mark Entry</button>
+                        <button className="btn" onClick={handleEntryMark} style={{ flex: '0 0 auto' }}>
+                            Mark Entry
+                        </button>
                     </div>
 
                     {entryMsg.text && (
@@ -316,7 +350,6 @@ function AdminDashboard() {
                     )}
                 </div>
             )}
-
 
             {/* TAB 3: Upload report */}
             {activeTab === 2 && (
@@ -350,6 +383,8 @@ function AdminDashboard() {
                                 <th>Reference</th>
                                 <th>Name</th>
                                 <th>Email</th>
+                                <th>Paper ID</th>
+                                <th>Amount Paid</th>
                                 <th>Barcode</th>
                                 <th>Institution</th>
                                 <th>Reg. Category</th>
@@ -362,6 +397,8 @@ function AdminDashboard() {
                                     <td>{p.referenceNo}</td>
                                     <td>{p.name}</td>
                                     <td>{p.email}</td>
+                                    <td>{p.paperId || '-'}</td>
+                                    <td>{p.amountPaid ?? '-'}</td>
                                     <td>{p.barcode || '-'}</td>
                                     <td>{p.institution}</td>
                                     <td>{p.registeredCategory}</td>
@@ -378,8 +415,6 @@ function AdminDashboard() {
                 <div className="panel">
                     <div className="panel-title-row">
                         <h3 className="panel-title">Entry Logs</h3>
-
-                        {/* Refresh Icon */}
                         <span
                             className={`refresh-icon ${refreshing ? 'spin' : ''}`}
                             onClick={refreshLogs}
@@ -389,13 +424,11 @@ function AdminDashboard() {
                         </span>
                     </div>
 
-                    {/* Stats */}
                     <div className="stats-box">
                         <strong>Total Entries:</strong> {stats.totalEntries || 0} <br />
                         <strong>Unique Participants:</strong> {stats.uniqueParticipants || 0}
                     </div>
 
-                    {/* Logs Table */}
                     <table className="logs-table">
                         <thead>
                             <tr>
@@ -423,6 +456,13 @@ function AdminDashboard() {
                 </div>
             )}
 
+            {/* TAB 6: Accommodation placeholder */}
+            {activeTab === 5 && (
+                <div className="panel">
+                    <h3 className="panel-title">Accommodation</h3>
+                    <p style={{ opacity: 0.8 }}>Accommodation module coming soon.</p>
+                </div>
+            )}
         </div>
     );
 }
