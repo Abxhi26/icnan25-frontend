@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || "https://icnan-25-backend.onrender.com",
+    baseURL: "https://icnan-25-backend.onrender.com",
     withCredentials: true,
 });
 
@@ -51,4 +51,6 @@ export const getAllEntries = (params = {}) =>
 
 export const getEntryStats = () =>
     api.get('/entries/stats');
+export const getSimpleLogs = () =>
+    api.get('/entries/simple-logs');
 

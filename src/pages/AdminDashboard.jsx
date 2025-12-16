@@ -8,7 +8,8 @@ import {
     deassignBarcode,
     markEntry,
     getAllEntries,
-    getEntryStats
+    getEntryStats,
+    getSimpleLogs,
 } from '../services/api';
 import './AdminDashboard.css';
 
@@ -48,11 +49,12 @@ function AdminDashboard() {
     // load participants / entries when tab changes
     useEffect(() => {
         if (activeTab === 3) {
-            getAllParticipants().then(res => setAllParticipants(res.data || res)).catch(() => { setAllParticipants([]); });
+            getAllParticipants()
+                .then(res => setAllParticipants(res.data || res))
+                .catch(() => { setAllParticipants([]); });
         }
         if (activeTab === 4) {
-            getAllEntries().then(res => setAllEntries(res.data || res)).catch(() => { setAllEntries([]); });
-            getEntryStats().then(res => setStats(res.data || res)).catch(() => setStats({}));
+            refreshLogs();
         }
     }, [activeTab]);
 
@@ -163,6 +165,13 @@ function AdminDashboard() {
         try {
             await markEntry(code, venue);
             showMsg(setEntryMsg, 'Entry marked successfully', 'success');
+
+            // refresh logs + stats after marking entry
+            try {
+                await refreshLogs();
+            } catch (innerErr) {
+                console.error('Error refreshing logs after mark-entry', innerErr);
+            }
         } catch (err) {
             console.error('Mark entry error', err);
             const msg = err?.response?.data?.error || 'Entry marking failed';
@@ -191,14 +200,17 @@ function AdminDashboard() {
     const refreshLogs = async () => {
         setRefreshing(true);
         try {
-            const entriesRes = await getAllEntries();
+            const logsRes = await getSimpleLogs();
             const statsRes = await getEntryStats();
-            setAllEntries(entriesRes.data || entriesRes);
+            setAllEntries(logsRes.data || logsRes);
             setStats(statsRes.data || statsRes);
         } catch (err) {
             console.error("Error refreshing logs", err);
+            setAllEntries([]);
+            setStats({});
+        } finally {
+            setTimeout(() => setRefreshing(false), 800);
         }
-        setTimeout(() => setRefreshing(false), 800);
     };
 
     return (
