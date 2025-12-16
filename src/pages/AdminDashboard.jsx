@@ -9,7 +9,6 @@ import {
     markEntry,
     getAllEntries,
     getEntryStats,
-    getSimpleLogs,
 } from '../services/api';
 import './AdminDashboard.css';
 
@@ -35,6 +34,7 @@ function AdminDashboard() {
 
     const [venue, setVenue] = useState('');
     const [entryMsg, setEntryMsg] = useState({ text: '', type: '' });
+    const [entryDetails, setEntryDetails] = useState(null);
 
     const [uploadFile, setUploadFile] = useState(null);
     const [uploadMsg, setUploadMsg] = useState({ text: '', type: '' });
@@ -163,10 +163,16 @@ function AdminDashboard() {
             return;
         }
         try {
-            await markEntry(code, venue);
-            showMsg(setEntryMsg, 'Entry marked successfully', 'success');
+            const res = await markEntry(code, venue);
+            const data = res.data || res;
+            showMsg(setEntryMsg, data.message || 'Entry marked successfully', 'success');
 
-            // refresh logs + stats after marking entry
+            setEntryDetails({
+                participant: data.participant,
+                entry: data.entry,
+                history: data.history || [],
+            });
+
             try {
                 await refreshLogs();
             } catch (innerErr) {
@@ -174,8 +180,17 @@ function AdminDashboard() {
             }
         } catch (err) {
             console.error('Mark entry error', err);
-            const msg = err?.response?.data?.error || 'Entry marking failed';
+            const data = err?.response?.data;
+            const msg = data?.error || 'Entry marking failed';
             showMsg(setEntryMsg, msg, 'error');
+
+            if (data?.participant) {
+                setEntryDetails({
+                    participant: data.participant,
+                    entry: { venue, timestamp: data.timestamp },
+                    history: data.history || [],
+                });
+            }
         }
     };
 
@@ -200,9 +215,9 @@ function AdminDashboard() {
     const refreshLogs = async () => {
         setRefreshing(true);
         try {
-            const logsRes = await getSimpleLogs();
+            const entriesRes = await getAllEntries();
             const statsRes = await getEntryStats();
-            setAllEntries(logsRes.data || logsRes);
+            setAllEntries(entriesRes.data || entriesRes);
             setStats(statsRes.data || statsRes);
         } catch (err) {
             console.error("Error refreshing logs", err);
@@ -359,6 +374,26 @@ function AdminDashboard() {
 
                     {entryMsg.text && (
                         <div className={`msg ${entryMsg.type === 'error' ? 'msg-error' : 'msg-success'}`}>{entryMsg.text}</div>
+                    )}
+
+                    {entryDetails && (
+                        <div className="entry-details-card">
+                            <h4>Participant Details</h4>
+                            <p><strong>Name:</strong> {entryDetails.participant?.name}</p>
+                            <p><strong>Email:</strong> {entryDetails.participant?.email}</p>
+                            <p><strong>Reference No:</strong> {entryDetails.participant?.referenceNo}</p>
+                            <p><strong>Barcode:</strong> {entryDetails.participant?.barcode}</p>
+
+                            <h4 style={{ marginTop: '1rem' }}>Entry History</h4>
+                            <p><strong>Total Entries:</strong> {entryDetails.history.length}</p>
+                            <ul>
+                                {entryDetails.history.map(h => (
+                                    <li key={h.id}>
+                                        {h.venue} — {new Date(h.timestamp).toLocaleString()}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     )}
                 </div>
             )}
